@@ -1,0 +1,71 @@
+{
+  "Comment": "Amazon States Language using Pass states",
+  "StartAt": "Spark-Step-To-EMR-Cluster",
+  "States": {
+    "Spark-Step-To-EMR-Cluster": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::elasticmapreduce:addStep.sync",
+      "Parameters": {
+        "ClusterId.$": "$.clusterId",
+        "Step": {
+          "Name": "SparkJob",
+          "HadoopJarStep": {
+            "Jar": "command-runner.jar",
+            "Args.$": "$.sparkArgs"
+          }
+        }
+      },
+      "ResultPath": "$.sparkResult",
+      "Next": "Hive-Step-To-EMR-Cluster"
+    },
+    "Hive-Step-To-EMR-Cluster": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::elasticmapreduce:addStep.sync",
+      "Parameters": {
+        "ClusterId.$": "$.clusterId",
+        "Step": {
+          "Name": "HiveJob",
+          "HadoopJarStep": {
+            "Jar": "command-runner.jar",
+            "Args.$": "$.hiveArgs"
+          }
+        }
+      },
+      "ResultPath": "$.hiveResult",
+      "Next": "Terminate-Cluster-Decision"
+    },
+    "Terminate-Cluster-Decision": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.deleteCluster",
+          "BooleanEquals": true,
+          "Next": "Disable-Termination-Protection"
+        }
+      ],
+      "Default": "Wrap-Up"
+    },
+    "Disable-Termination-Protection": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::elasticmapreduce:setClusterTerminationProtection",
+      "Parameters": {
+        "ClusterId.$": "$.clusterId",
+        "TerminationProtected": false
+      },
+      "ResultPath": null,
+      "Next": "Terminate-EMR-cluster"
+    },
+    "Terminate-EMR-cluster": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::elasticmapreduce:terminateCluster.sync",
+      "Parameters": {
+        "ClusterId.$": "$.clusterId"
+      },
+      "Next": "Wrap-Up"
+    },
+    "Wrap-Up": {
+      "Type": "Pass",
+      "End": true
+    }
+  }
+}
