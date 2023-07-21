@@ -10,13 +10,13 @@ src_prefix = ''
 client = boto3.client('s3')
 # we cannot get more than 1000 objects without pagination.
 paginator = client.get_paginator('list_objects_v2')
-pages = paginator.paginate(Bucket=src_bucket_name, Prefix=prefix)
+pages = paginator.paginate(Bucket=src_bucket_name, Prefix=src_prefix)
 
 # create metadata details
-str = 'file_name,date,size' # schema
+str = 'file_path,date,time,size' # schema
 for page in pages:
     for obj in page['Contents']:
-        str = str + f"""\n{obj['Key']},{obj['LastModified'].strftime('%Y-%m-%d')},{obj['Size']}"""
+        str = str + f"""\n{obj['Key']},{obj['LastModified'].strftime('%Y-%m-%d')},{obj['LastModified'].strftime('%H:%M:%S')},{obj['Size']}"""
 
         
 # write metadata in a bucket
