@@ -6,8 +6,9 @@ import boto3
 src_bucket_name = ''
 src_prefix = ''
 
-# create client and pages
+# create client
 client = boto3.client('s3')
+# we cannot get more than 1000 objects without pagination.
 paginator = client.get_paginator('list_objects_v2')
 pages = paginator.paginate(Bucket=src_bucket_name, Prefix=prefix)
 
